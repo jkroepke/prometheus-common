@@ -18,6 +18,7 @@ package promlog
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"sync"
 	"time"
@@ -111,11 +112,17 @@ type Config struct {
 // New returns a new leveled oklog logger. Each logged line will be annotated
 // with a timestamp. The output always goes to stderr.
 func New(config *Config) log.Logger {
+	return NewWithWriter(log.NewSyncWriter(os.Stderr), config)
+}
+
+// NewWithWriter returns a new leveled oklog logger with a custom io.Writer.
+// Each logged line will be annotated with a timestamp.
+func NewWithWriter(writer io.Writer, config *Config) log.Logger {
 	var l log.Logger
 	if config.Format != nil && config.Format.s == "json" {
-		l = log.NewJSONLogger(log.NewSyncWriter(os.Stderr))
+		l = log.NewJSONLogger(writer)
 	} else {
-		l = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
+		l = log.NewLogfmtLogger(writer)
 	}
 
 	if config.Level != nil {
@@ -131,11 +138,18 @@ func New(config *Config) log.Logger {
 // with a timestamp. The output always goes to stderr. Some properties can be
 // changed, like the level.
 func NewDynamic(config *Config) *logger {
+	return NewDynamicWithWriter(log.NewSyncWriter(os.Stderr), config)
+}
+
+// NewDynamicWithWriter returns a new leveled logger with a custom io.Writer.
+// Each logged line will be annotated with a timestamp.
+// Some properties can be changed, like the level.
+func NewDynamicWithWriter(writer io.Writer, config *Config) *logger {
 	var l log.Logger
 	if config.Format != nil && config.Format.s == "json" {
-		l = log.NewJSONLogger(log.NewSyncWriter(os.Stderr))
+		l = log.NewJSONLogger(writer)
 	} else {
-		l = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
+		l = log.NewLogfmtLogger(writer)
 	}
 
 	lo := &logger{
